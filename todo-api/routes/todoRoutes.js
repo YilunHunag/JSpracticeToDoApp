@@ -1,16 +1,22 @@
-const express = require("express");
-const Todo = require("../models/Todo"); // 引入 Todo 模型
-const router = express.Router();
+const express = require("express"); // 載入 Express 框架，幫助建立 API。
+const Todo = require("../models/Todo"); // 從 models/Todo.js 引入 待辦事項的 Schema & Model，讓我們能操作 MongoDB 裡的 todos 集合。
+const router = express.Router(); // 建立一個「獨立的路由 (Router)」，用來定義 /api/todos 相關的 API。
 
 // 取得所有待辦事項
+// 取得所有待辦事項（支持分頁）
 router.get("/todos", async (req, res) => {
-  try {
-    const todos = await Todo.find(); // 查詢所有待辦事項
-    res.json(todos);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    try {
+      const { page = 1, limit = 10 } = req.query;  // 取得分頁參數，預設 page=1 和 limit=10
+      const todos = await Todo.find()
+        .skip((page - 1) * limit)  // 跳過前面的資料
+        .limit(parseInt(limit));  // 限制回傳資料的數量
+  
+      res.json(todos);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  
 
 // 新增待辦事項
 router.post("/todos", async (req, res) => {
@@ -59,4 +65,23 @@ router.delete("/todos/:id", async (req, res) => {
     }
   });
   
+// 更新待辦事項的完成狀態
+router.patch("/todos/:id", async (req, res) => {
+    try {
+      const { id } = req.params;  // 從 URL 取得待辦事項的 ID
+      const { completed } = req.body;  // 從 request body 取得 completed 屬性（true 或 false）
+  
+      // 查詢並更新待辦事項的 completed 屬性
+      const todo = await Todo.findByIdAndUpdate(id, { completed }, { new: true });
+  
+      if (!todo) {
+        return res.status(404).json({ error: "待辦事項未找到" });
+      }
+  
+      res.json(todo);  // 回傳更新後的待辦事項
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
 module.exports = router;
