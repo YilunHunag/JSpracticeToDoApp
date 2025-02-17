@@ -11,6 +11,11 @@ const PORT = process.env.PORT || 5000;
 // 中間件 (Middleware)
 app.use(cors());
 app.use(express.json()); // 解析 JSON 格式的請求
+app.use((req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');  // 設置回應的 Content-Type 為 JSON
+    next();  // 呼叫 next()，繼續處理其他的中間件或路由處理器
+});
+
 app.use("/api", todoRoutes);
 
 // 連接 MongoDB
