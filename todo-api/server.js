@@ -1,7 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const todoRoutes = require("./routes/todoRoutes");
 require("dotenv").config();
+console.log("MONGO_URI:", process.env.MONGO_URI); // 檢測DB是否有效
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -9,6 +11,7 @@ const PORT = process.env.PORT || 5000;
 // 中間件 (Middleware)
 app.use(cors());
 app.use(express.json()); // 解析 JSON 格式的請求
+app.use("/api", todoRoutes);
 
 // 連接 MongoDB
 mongoose.connect(process.env.MONGO_URI, {
