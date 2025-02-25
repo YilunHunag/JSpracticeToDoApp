@@ -7,6 +7,19 @@ const router = express.Router(); // 建立一個「獨立的路由 (Router)」�
 router.get("/todos", async (req, res) => {
     try {
       const { page = 1, limit = 10 } = req.query;  // 取得分頁參數，預設 page=1 和 limit=10
+      
+      // 準備篩選條件的物件
+      const filter = {};
+
+      // 篩選條件: 根據complete (True or Fale)
+      if (complete !== undefined){
+        filter.completed = complete === "true"; // 字串轉為boolean
+      }
+      // 篩選條件: 關鍵字搜尋
+      if (search){
+        filter.title = {$regex: search, $options: "i"}; // i = 不區分大小寫
+      }
+      // 查詢mongo db並進行分頁
       const todos = await Todo.find()
         .skip((page - 1) * limit)  // 跳過前面的資料
         .limit(parseInt(limit));  // 限制回傳資料的數量
