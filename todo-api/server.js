@@ -5,6 +5,11 @@ const todoRoutes = require("./routes/todoRoutes");
 require("dotenv").config();
 console.log("MONGO_URI:", process.env.MONGO_URI); // 檢測DB是否有效
 
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("./models/User"); // 假設你有一個 User 模型
+const router = express.Router();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -34,3 +39,38 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
     console.log(`🚀 伺服器正在運行於 http://localhost:${PORT}`);
 });
+
+// 註冊用戶
+router.post("/register", async (req, res) => {
+    const { username, password } = req.body;
+  
+    // 密碼加密
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+  
+    // 儲存用戶到資料庫
+    const newUser = new User({ username, password: hashedPassword });
+    await newUser.save();
+  
+    res.status(201).send("用戶註冊成功");
+  });
+  
+  // 登入用戶
+  router.post("/login", async (req, res) => {
+    const { username, password } = req.body;
+  
+    // 找到用戶
+    const user = await User.findOne({ username });
+    if (!user) return res.status(400).send("用戶不存在");
+  
+    // 密碼比對
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).send("密碼錯誤");
+  
+    // 生成 JWT Token
+    const token = jwt.sign({ id: user._id }, "your_jwt_secret", { expiresIn: "1h" });
+  
+    res.json({ token });
+  });
+  
+  module.exports = router;
